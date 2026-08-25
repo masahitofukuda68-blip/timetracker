@@ -1,2 +1,2 @@
-# timetracker
-timetracker-app
+＃プロダクトゴール
+タイムトラッカーアプリを作り、やる気を出させる。
