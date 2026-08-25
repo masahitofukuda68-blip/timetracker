@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#14261f">
+  <title>Focusly | ごほうびタイムトラッカー</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Focusly ホーム">
+        <span class="brand-mark">✦</span>
+        <span>focusly</span>
+      </a>
+      <div class="topbar-meta">
+        <span class="date-label" id="todayLabel"></span>
+        <button class="icon-button" id="resetDataButton" type="button" title="データをリセット" aria-label="データをリセット">↺</button>
+        <div class="avatar" aria-label="ユーザープロフィール">MF</div>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">今日も、ひとつずつ。</p>
+          <h1>集中は、<em>ごほうび</em>に<br>変えられる。</h1>
+          <p class="hero-description">今日の小さな達成を積み上げて、<br>自分のペースでレベルアップしよう。</p>
+          <div class="streak-pill"><span class="flame">♨</span><strong id="streakCount">0日</strong> ストリーク継続中</div>
+        </div>
+        <div class="hero-orbit" aria-hidden="true">
+          <div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div>
+          <div class="orbit-core"><span>LV.</span><strong id="levelNumber">1</strong></div>
+          <span class="orbit-star star-a">✦</span><span class="orbit-star star-b">✧</span>
+        </div>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="main-column">
+          <article class="focus-card panel">
+            <div class="section-heading">
+              <div><p class="label">NOW FOCUSING</p><h2 id="activeTaskName">タスクを選んで始めよう</h2></div>
+              <span class="live-dot" id="timerStatus">READY</span>
+            </div>
+            <div class="timer-display" id="timerDisplay">00:00:00</div>
+            <div class="timer-track"><span id="timerTrackFill"></span></div>
+            <div class="timer-actions">
+              <button class="primary-button" id="startButton" type="button"><span>▶</span><span id="startButtonText">タイマーを開始</span></button>
+              <button class="secondary-button" id="stopButton" type="button" disabled>完了して +XP</button>
+            </div>
+            <p class="timer-hint">25分集中すると、ボーナスXPを獲得できます</p>
+          </article>
+
+          <section class="tasks-section">
+            <div class="section-heading compact"><div><p class="label">YOUR QUESTS</p><h2>今日のタスク</h2></div><button class="add-button" id="addTaskButton" type="button"><span>＋</span> 新しいタスク</button></div>
+            <div class="task-list" id="taskList"></div>
+          </section>
+        </div>
+
+        <aside class="side-column">
+          <article class="reward-card panel">
+            <div class="card-topline"><p class="label">YOUR REWARD</p><span class="coin">●</span></div>
+            <div class="reward-number"><strong id="xpNumber">0</strong><span>XP</span></div>
+            <div class="level-row"><span>LEVEL <strong id="levelLabel">01</strong></span><span id="nextLevelText">あと100 XP</span></div>
+            <div class="xp-track"><span id="xpTrackFill"></span></div>
+            <p class="reward-message" id="rewardMessage">最初のクエストを完了して、XPを手に入れよう。</p>
+          </article>
+
+          <article class="stats-card panel">
+            <div class="card-topline"><p class="label">THIS WEEK</p><span class="trend">↗ 12%</span></div>
+            <div class="week-chart" id="weekChart"></div>
+            <div class="chart-labels"><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span><span>日</span></div>
+          </article>
+
+          <article class="reward-note panel"><span class="note-icon">✹</span><div><strong>自分に小さな休憩を。</strong><p>30分達成したら、好きな音楽を1曲聴こう。</p></div></article>
+        </aside>
+      </section>
+
+      <section class="history-section">
+        <div class="section-heading compact"><div><p class="label">RECENT WINS</p><h2>最近の達成</h2></div><span class="total-time" id="totalTimeLabel">合計 0時間</span></div>
+        <div class="history-list" id="historyList"></div>
+      </section>
+    </main>
+    <footer><span>FOCUSLY / MAKE TIME COUNT</span><span>続けることが、いちばんのスキル。</span></footer>
+  </div>
+  <div class="modal-backdrop" id="taskModal" hidden>
+    <form class="task-modal" id="taskForm">
+      <div class="modal-heading"><div><p class="label">NEW QUEST</p><h2>自分のタスクをつくる</h2></div><button class="modal-close" id="closeModalButton" type="button" aria-label="閉じる">×</button></div>
+      <label class="form-field"><span>タスク名</span><input id="taskNameInput" name="name" type="text" placeholder="例：プレゼンの練習" maxlength="50" required></label>
+      <div class="form-row">
+        <label class="form-field"><span>目安時間（分）</span><input id="taskEstimateInput" name="estimate" type="number" min="1" max="600" value="25" required></label>
+        <label class="form-field"><span>獲得XP</span><input id="taskXpInput" name="xp" type="number" min="1" max="999" value="50" required></label>
+      </div>
+      <p class="modal-hint">難しいタスクほど、高いXPを設定してみよう。</p>
+      <button class="primary-button modal-submit" type="submit">＋ クエストを追加</button>
+    </form>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
