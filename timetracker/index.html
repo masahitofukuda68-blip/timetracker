@@ -59,6 +59,11 @@
             <div class="section-heading compact"><div><p class="label">YOUR QUESTS</p><h2>今日のタスク</h2></div><button class="add-button" id="addTaskButton" type="button"><span>＋</span> 新しいタスク</button></div>
             <div class="task-list" id="taskList"></div>
           </section>
+
+          <section class="schedule-section">
+            <div class="section-heading compact"><div><p class="label">TODAY'S PLAN</p><h2>予定</h2></div><div class="schedule-controls"><input id="scheduleViewDate" type="date" aria-label="表示する予定の日付"><button class="add-button" id="addScheduleButton" type="button"><span>＋</span> 予定を追加</button></div></div>
+            <div class="schedule-list" id="scheduleList"></div>
+          </section>
         </div>
 
         <aside class="side-column">
@@ -68,6 +73,10 @@
             <div class="level-row"><span>LEVEL <strong id="levelLabel">01</strong></span><span id="nextLevelText">あと100 XP</span></div>
             <div class="xp-track"><span id="xpTrackFill"></span></div>
             <p class="reward-message" id="rewardMessage">最初のクエストを完了して、XPを手に入れよう。</p>
+            <div class="level-reward" id="levelReward" hidden>
+              <div><span class="reward-unlock" id="rewardUnlockLabel">LEVEL 02 UNLOCKED</span><strong id="rewardTitle">ごほうび</strong></div>
+              <button class="claim-button" id="claimRewardButton" type="button">受け取る</button>
+            </div>
           </article>
 
           <article class="stats-card panel">
@@ -97,6 +106,19 @@
       </div>
       <p class="modal-hint">難しいタスクほど、高いXPを設定してみよう。</p>
       <button class="primary-button modal-submit" type="submit">＋ クエストを追加</button>
+    </form>
+  </div>
+  <div class="modal-backdrop" id="scheduleModal" hidden>
+    <form class="task-modal" id="scheduleForm">
+      <div class="modal-heading"><div><p class="label">NEW PLAN</p><h2>予定を組み込む</h2></div><button class="modal-close" id="closeScheduleModalButton" type="button" aria-label="閉じる">×</button></div>
+      <label class="form-field"><span>予定</span><input id="scheduleNameInput" name="name" type="text" placeholder="例：チームミーティング" maxlength="50" required></label>
+      <div class="form-row">
+        <label class="form-field"><span>日付</span><input id="scheduleDateInput" name="date" type="date" required></label>
+        <label class="form-field"><span>開始時刻</span><input id="scheduleStartInput" name="start" type="time" required></label>
+      </div>
+      <label class="form-field"><span>終了時刻</span><input id="scheduleEndInput" name="end" type="time" required></label>
+      <p class="modal-hint">予定は開始時刻の早い順に、今日の一覧へ表示されます。</p>
+      <button class="primary-button modal-submit" type="submit">＋ 予定を追加</button>
     </form>
   </div>
   <div class="toast" id="toast" role="status"></div>

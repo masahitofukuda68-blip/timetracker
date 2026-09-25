@@ -5,7 +5,7 @@ const defaultTasks = [
 ];
 
 const stored = JSON.parse(localStorage.getItem('focusly-state') || 'null');
-const state = stored || { xp: 0, streak: 0, tasks: defaultTasks, history: [], week: [35, 55, 30, 75, 44, 18, 0] };
+const state = { xp: 0, streak: 0, tasks: defaultTasks, history: [], week: [35, 55, 30, 75, 44, 18, 0], schedules: [], claimedRewards: [], ...stored };
 let activeTaskId = null;
 let timerStartedAt = null;
 let elapsedBeforePause = 0;
@@ -15,6 +15,26 @@ const $ = (id) => document.getElementById(id);
 const save = () => localStorage.setItem('focusly-state', JSON.stringify(state));
 const formatTime = (seconds) => [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60].map((part) => String(part).padStart(2, '0')).join(':');
 const currentElapsed = () => elapsedBeforePause + (timerStartedAt ? Math.floor((Date.now() - timerStartedAt) / 1000) : 0);
+const localDate = () => { const date = new Date(); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; };
+const rewardForLevel = (level) => ({ level, title: ['特別な休憩を楽しむ', '好きなスイーツをひとつ選ぶ', '自分のためのごほうび時間'][Math.min(level - 2, 2)] || '自分だけのスペシャルごほうび' });
+
+function renderSchedules() {
+  const selectedDate = $('scheduleViewDate').value;
+  const schedules = state.schedules.filter((schedule) => schedule.date === selectedDate).sort((a, b) => a.start.localeCompare(b.start));
+  $('scheduleList').innerHTML = schedules.length ? schedules.map((schedule) => `
+    <label class="schedule-item ${schedule.done ? 'completed' : ''}">
+      <span class="schedule-time">${schedule.start} - ${schedule.end}</span>
+      <span class="schedule-details"><input class="schedule-check" type="checkbox" data-schedule-id="${schedule.id}" ${schedule.done ? 'checked' : ''}><span class="schedule-name">${schedule.name}</span></span>
+    </label>`).join('') : '<div class="empty-state">この日の予定はありません。</div>';
+  $('scheduleList').querySelectorAll('.schedule-check').forEach((input) => input.addEventListener('change', () => {
+    const schedule = state.schedules.find((item) => item.id === Number(input.dataset.scheduleId));
+    if (!schedule) return;
+    schedule.done = input.checked;
+    save();
+    renderSchedules();
+    showToast(input.checked ? '予定を完了しました' : '予定を未完了に戻しました');
+  }));
+}
 
 function renderTasks() {
   const list = $('taskList');
@@ -30,6 +50,7 @@ function renderTasks() {
 function renderRewards() {
   const level = Math.floor(state.xp / 100) + 1;
   const progress = state.xp % 100;
+  const pendingReward = Array.from({ length: Math.max(level - 1, 0) }, (_, index) => rewardForLevel(index + 2)).find((reward) => !state.claimedRewards.includes(reward.level));
   $('xpNumber').textContent = state.xp;
   $('levelNumber').textContent = level;
   $('levelLabel').textContent = String(level).padStart(2, '0');
@@ -37,6 +58,11 @@ function renderRewards() {
   $('nextLevelText').textContent = `あと ${100 - progress} XP`;
   $('streakCount').textContent = `${state.streak}日`;
   $('rewardMessage').textContent = state.xp ? `レベル ${level} まであと少し。今日の集中を積み上げよう。` : '最初のクエストを完了して、XPを手に入れよう。';
+  $('levelReward').hidden = !pendingReward;
+  if (pendingReward) {
+    $('rewardUnlockLabel').textContent = `LEVEL ${String(pendingReward.level).padStart(2, '0')} UNLOCKED`;
+    $('rewardTitle').textContent = pendingReward.title;
+  }
 }
 
 function renderHistory() {
@@ -48,6 +74,15 @@ function renderHistory() {
 function renderWeek() { $('weekChart').innerHTML = state.week.map((value, index) => `<span class="bar ${index === 4 ? 'active' : ''}" style="height:${Math.max(value, 8)}%"></span>`).join(''); }
 function renderTimer() { $('timerDisplay').textContent = formatTime(currentElapsed()); $('timerTrackFill').style.width = `${Math.min(currentElapsed() / 1500 * 100, 100)}%`; }
 function showToast(message) { const toast = $('toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2400); }
+function claimReward() {
+  const level = Math.floor(state.xp / 100) + 1;
+  const reward = Array.from({ length: Math.max(level - 1, 0) }, (_, index) => rewardForLevel(index + 2)).find((item) => !state.claimedRewards.includes(item.level));
+  if (!reward) return;
+  state.claimedRewards.push(reward.level);
+  save();
+  renderRewards();
+  showToast(`「${reward.title}」を受け取りました`);
+}
 
 function selectTask(id) { activeTaskId = id; const task = state.tasks.find((item) => item.id === id); $('activeTaskName').textContent = task ? task.name : 'タスクを選んで始めよう'; }
 function completeTask(id, checked) {
@@ -65,6 +100,7 @@ function stopTimer(markComplete = false) {
 
 $('startButton').addEventListener('click', () => { if (!activeTaskId) { selectTask(state.tasks.find((task) => !task.done)?.id); if (!activeTaskId) return showToast('まずタスクを追加してください'); } if (timerStartedAt) { stopTimer(); } else { timerStartedAt = Date.now(); $('startButtonText').textContent = '一時停止'; $('timerStatus').textContent = 'FOCUSING'; $('stopButton').disabled = false; timerInterval = setInterval(renderTimer, 1000); } });
 $('stopButton').addEventListener('click', () => stopTimer(true));
+$('claimRewardButton').addEventListener('click', claimReward);
 $('taskList').addEventListener('click', (event) => { const item = event.target.closest('.task-item'); if (item && !event.target.classList.contains('task-check')) selectTask(Number(item.querySelector('input').dataset.taskId)); });
 function closeTaskModal() { $('taskModal').hidden = true; }
 $('addTaskButton').addEventListener('click', () => { $('taskModal').hidden = false; $('taskNameInput').focus(); });
@@ -80,6 +116,28 @@ $('taskForm').addEventListener('submit', (event) => {
   state.tasks.push({ id: Date.now(), name, estimate: `${estimate}分`, xp, done: false });
   save(); renderTasks(); event.currentTarget.reset(); $('taskEstimateInput').value = 25; $('taskXpInput').value = 50; closeTaskModal(); showToast('新しいクエストを追加しました');
 });
+function closeScheduleModal() { $('scheduleModal').hidden = true; }
+$('addScheduleButton').addEventListener('click', () => { $('scheduleModal').hidden = false; $('scheduleDateInput').value = $('scheduleViewDate').value; $('scheduleNameInput').focus(); });
+$('closeScheduleModalButton').addEventListener('click', closeScheduleModal);
+$('scheduleModal').addEventListener('click', (event) => { if (event.target === $('scheduleModal')) closeScheduleModal(); });
+$('scheduleViewDate').addEventListener('change', renderSchedules);
+$('scheduleForm').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const form = new FormData(event.currentTarget);
+  const name = String(form.get('name')).trim();
+  const date = String(form.get('date'));
+  const start = String(form.get('start'));
+  const end = String(form.get('end'));
+  if (!name || !date || !start || !end || start >= end) return showToast('終了時刻は開始時刻より後に設定してください');
+  state.schedules.push({ id: Date.now(), name, date, start, end, done: false });
+  save();
+  $('scheduleViewDate').value = date;
+  renderSchedules();
+  event.currentTarget.reset();
+  closeScheduleModal();
+  showToast('予定を追加しました');
+});
 $('resetDataButton').addEventListener('click', () => { if (confirm('すべての記録をリセットしますか？')) { localStorage.removeItem('focusly-state'); location.reload(); } });
 $('todayLabel').textContent = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
-renderTasks(); renderRewards(); renderHistory(); renderWeek(); renderTimer();
+$('scheduleViewDate').value = localDate();
+renderTasks(); renderRewards(); renderHistory(); renderWeek(); renderTimer(); renderSchedules();
